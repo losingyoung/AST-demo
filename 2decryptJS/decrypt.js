@@ -7,8 +7,8 @@ const path = require('path')
 const fs = require('fs')
 const { decryptStr, decryptStrFnName } = require('./module')
 
-// step1().then(step2)
-// step1
+// 需手动删除最上面的无用代码
+step1().then(step2) 
 function step1() {
     return new Promise((resolve, reject) => {
         fs.readFile(path.resolve(__dirname, './source.js'), { "encoding": 'utf-8' }, function (err, data) {
@@ -18,6 +18,7 @@ function step1() {
             code = code.replace(/!!\[\]/g, 'true').replace(/!\[\]/g, 'false')
             fs.writeFile(path.resolve(__dirname, './result1.js'), code, function (err) {
                 if (!err) {
+                    console.log('result1 generated')
                     resolve()
                 } else {
                     console.log(err)
@@ -76,6 +77,7 @@ function decrypt2(ast) {
 function removeExtra(path) {
     delete path.node.extra
 }
+// 替换变量名
 function renameVars(path) {
     let val = path.node.name
     if (val in renameVarMap) {
@@ -85,16 +87,7 @@ function renameVars(path) {
     const vals = Object.values(renameVarMap)
     if (vals.includes(val)) return
     let newName = path.scope.generateUid(randomVarName())
-    // while(true) {
-    //     newName =
-    //     console.log(path.scope.bindings)
-    //     if (newName in path.scope.bindings) {
-    //         continue
-    //     } else {
-    //         break
-    //     }
 
-    // }
     path.scope.rename(val, newName)
 }
 function randomVarName() {
@@ -112,7 +105,7 @@ function replaceFns(path) {
         if (!t.isReturnStatement(retStmt)) return
 
     } catch (error) {
-        console.log('wrong fn arr', properties)
+        // console.log('ignore: wrong fn arr', properties)
     }
 
     let objName = node.id.name
@@ -142,30 +135,6 @@ function replaceFns(path) {
                 }
             }
         })
-        // path.findParent(p => {
-        //     if (t.isProgram(p.node)) {
-        //         p.traverse({
-        //             CallExpression: function (_path) {
-        //                 if (!t.isMemberExpression(_path.node.callee)) return
-        //                 let node = _path.node.callee
-        //                 if (!t.isIdentifier(node.object) || node.object.name !== objName) return
-
-        //                 if (!t.isStringLiteral(node.property) || node.property.value !== key) return
-        //                 let args = _path.node.arguments // 调用传入的参数
-
-        //                 if (t.isBinaryExpression(retStmt.argument) && args.length === 2) {
-        //                     _path.replaceWith(t.binaryExpression(retStmt.argument.operator, args[0], args[1]))
-        //                 }
-        //                 if (t.isLogicalExpression(retStmt.argument)&& args.length === 2) {
-        //                     _path.replaceWith(t.logicalExpression(retStmt.argument.operator, args[0], args[1]))
-        //                 }
-        //                 if (t.isCallExpression(retStmt.argument)&&t.isIdentifier(retStmt.argument.callee)) {
-        //                     _path.replaceWith(t.callExpression(args[0], args.slice(1)))
-        //                 }
-        //             }
-        //         })
-        //     }
-        // })
     })
     path.remove()
 
@@ -284,34 +253,6 @@ function generateTransferFile(path, filePath) {
     path.get('callee.body').replaceWith(t.blockStatement([mainBody]))
     fs.writeFileSync(filePath, code, { encoding: 'utf-8' })
 }
-// function replaceMainArgs(_path) {
-//     let node = _path.node
-
-//     if (t.isFunctionExpression(node.callee) && node.arguments.length > 10) {
-//         const params = node.callee.params
-
-//         const args = changeArgs(node.arguments)
-//         params.forEach((param, idx) => {
-//             _path.traverse({
-//                 CallExpression: function(_path) {
-//                     const node = _path.node
-//                     if (t.isFunctionExpression(node.callee)) {}
-//                 },
-//                 Identifier: function (_path) {
-//                     let name = _path.node.name
-//                     if (name === param.name) {
-//                         let value = args[idx]
-//                         _path.replaceWith(value)
-
-//                     }
-//                 }
-//             })
-//         })
-//         // _path.stop()
-//         node.callee.params = []
-//         // _path.parentPath.replaceWithMultiple(node.callee.body.body)
-//     }
-// }
 
 function replaceWhile(path) {
     let node = path.node
